@@ -12,7 +12,10 @@ FEED_DURATION       = 1.5 # Duration of each sample in seconds
 FEED_LENGTH         = int(np.floor(RATE * FEED_DURATION / CHUNK_SAMPLES)) #number of chunks during the feed_duration
 WIN_LEN             = 1/(RATE/CHUNK_SAMPLES) #IN SECONDS
 
-soundFiles = os.listdir("recordings/")[2:]
+row = 23
+col = 13
+
+soundFiles = os.listdir("recordings/")
 print(soundFiles)
 
 silence_threshhold = 700
@@ -55,28 +58,44 @@ def find_mic_triggers(signal):
 
 # Main function 
 def read_wav():
+    TRAINING_DATA = np.empty([0, 1, row, col]) # XS Example array to be trained
+    TRAINING_LABELS = np.empty([0, 2 ]) # YS Label array
+
     for file in soundFiles:
-        #read the .wav file, store the signal, and divide into chunks 
-        (rate,sig) = wav.read("recordings/"+file)
-        new_sig = list(divide_sound_file(sig,CHUNK_SAMPLES))
+        if file.endswith('.wav'):
+            print("file names:")
+            print(file)
+            #read the .wav file, store the signal, and divide into chunks 
+            (rate,sig) = wav.read("recordings/"+file)
+            new_sig = list(divide_sound_file(sig,CHUNK_SAMPLES))
 
-        #Call function to mic trigger and mfcc
-        samples_to_process = find_mic_triggers(np.asarray(new_sig))
+            #Call function to mic trigger and mfcc
+            samples_to_process = find_mic_triggers(np.asarray(new_sig))
 
-        #turn the spectogram array into numphy and reshape to fit model 
-        final_spectograms = np.asarray(samples_to_process)
-        num_of_spec = len(final_spectograms)
-        final_spectograms = np.reshape(final_spectograms,(num_of_spec,1,23,13))
-        
-        #Create training labels that match the data length
-        labels = np.repeat(np.array([1., 0.])[None, :], num_of_spec, axis=0)
+            #turn the spectogram array into numphy and reshape to fit model 
+            final_spectograms = np.asarray(samples_to_process)
+            num_of_spec = len(final_spectograms)
+            final_spectograms = np.reshape(final_spectograms,(num_of_spec,1,row,col))
+            
+            #Create training labels that match the data length
+            labels = np.repeat(np.array([1., 0.])[None, :], num_of_spec, axis=0)
+            print(final_spectograms.shape)
+            print(labels.shape)
 
-        #get name and save as numphy arrays with the right name 
-        sound_file_name = os.path.splitext(file)
-        print(final_spectograms.shape)
-        print(labels.shape)
-        np.save("training_examples/"+sound_file_name[0]+"_data", final_spectograms)
-        np.save("training_examples/"+sound_file_name[0]+"_labels", labels)
+            TRAINING_LABELS = np.append(TRAINING_LABELS,labels,axis=0)
+            TRAINING_DATA = np.append(TRAINING_DATA,final_spectograms,axis=0)
+
+        else:
+            print("not .wav file")
+        #get name and save single file as numphy arrays with the right name 
+        #sound_file_name = os.path.splitext(file)
+        #np.save("training_examples/"+sound_file_name[0]+"_data", final_spectograms)
+        #np.save("training_examples/"+sound_file_name[0]+"_labels", labels)
+    print(TRAINING_LABELS.shape)
+    print(TRAINING_DATA.shape)
+    #Save as one file
+    np.save("training_examples/training_data", TRAINING_DATA)
+    np.save("training_examples/training_labels", TRAINING_LABELS)
 
 #Start program
 read_wav()
