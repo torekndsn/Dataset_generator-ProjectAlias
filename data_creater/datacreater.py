@@ -94,8 +94,8 @@ def read_wav():
     print(TRAINING_LABELS.shape)
     print(TRAINING_DATA.shape)
     #Save as one file
-    np.save("training_examples/training_data", TRAINING_DATA)
-    np.save("training_examples/training_labels", TRAINING_LABELS)
+    np.save("training_examples/background_sound_examples", TRAINING_DATA)
+    np.save("training_examples/background_sound_labels", TRAINING_LABELS)
 
 #Start program
 read_wav()
